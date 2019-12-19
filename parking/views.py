@@ -10,6 +10,8 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 from datetime import datetime
 from datetime import timedelta
+import cv2
+import json
 
 @require_http_methods(['GET'])
 @csrf_exempt
@@ -18,13 +20,29 @@ def park_view(request):
         data={}
 
         uid=request.GET.get('uid')
-        pos_x=request.GET.get('pos_x')
-        pos_y=request.GET.get('pos_y')
+        pname=request.GET.get('pname')
         status='parked'
 
-        obj = Park.objects.create(uid=uid,pos_x=pos_x,pos_y=pos_y,status=status)
-        data['obj']=str(obj.status)
-        return JsonResponse(data)
+        obj = Park.objects.get(pid=pname)
+        if obj.status == 'parked':
+            data['status'] = 'error'
+        else :
+            obj.uid = uid
+            obj.status = 'parked'
+            obj.save()
+            data['status']=str(obj.status)
+        
+        park = Park.objects.all()
+        img = cv2.imread("/home/ahmed/parking.png")
+        for p in park:
+            if p.status == 'left':
+                img=cv2.circle(img,(p.pos_x,p.pos_y),10,(0,255,0),-1)
+            else:
+                img=cv2.circle(img,(p.pos_x,p.pos_y),10,(0,0,255),-1)
+
+        cv2.imwrite("/home/ahmed/parking2.png",img)
+        with open("/home/ahmed/parking2.png", "rb") as f:
+            return HttpResponse(f.read(), content_type="image/bmp")
 
 @require_http_methods(['GET'])
 @csrf_exempt
@@ -33,12 +51,69 @@ def leave_view(request):
         data={}
 
         uid=request.GET.get('uid')
-        query = Park.objects.filter(uid=uid)
-        query=query[len(query)-1]
-        query.status='left'
-        query.save()
+        pname=request.GET.get('pname')
 
-        data['query']=str(query.status)
-        return JsonResponse(data)
+        obj = Park.objects.get(pid=pname)
+        if obj.status == 'left':
+            data['status'] = 'error'
+        else :
+            obj.uid = 0
+            obj.status = 'left'
+            obj.save()
+            data['status']=str(obj.status)
+        
+        park = Park.objects.all()
+        img = cv2.imread("/home/ahmed/parking.png")
+        for p in park:
+            if p.status == 'left':
+                img=cv2.circle(img,(p.pos_x,p.pos_y),10,(0,255,0),-1)
+            else:
+                img=cv2.circle(img,(p.pos_x,p.pos_y),10,(0,0,255),-1)
 
+        cv2.imwrite("/home/ahmed/parking2.png",img)
+        with open("/home/ahmed/parking2.png", "rb") as f:
+            return HttpResponse(f.read(), content_type="image/bmp")
 
+@require_http_methods(['GET'])
+@csrf_exempt
+def parking_image(req):
+    if req.method=='GET':
+        park = Park.objects.all()
+        img = cv2.imread("/home/ahmed/parking.png")
+        for p in park:
+            if p.status == 'left':
+                img=cv2.circle(img,(p.pos_x,p.pos_y),10,(0,255,0),-1)
+            else:
+                img=cv2.circle(img,(p.pos_x,p.pos_y),10,(0,0,255),-1)
+
+        cv2.imwrite("/home/ahmed/parking2.png",img)
+        with open("/home/ahmed/parking2.png", "rb") as f:
+            return HttpResponse(f.read(), content_type="image/bmp")
+
+@require_http_methods(['GET'])
+@csrf_exempt
+def locate_car(request):
+    if request.method == 'GET':
+        data={}
+        uid=request.GET.get('uid')
+
+        obj = Park.objects.get(uid=uid)
+        if obj.status == 'left':
+            data['status'] = 'error'
+        else :
+            data['status']=str(obj.status)
+        
+        park = Park.objects.all()
+        img = cv2.imread("/home/ahmed/parking.png")
+        for p in park:
+            print(uid,p.uid)
+            if p.status == 'left':
+                img=cv2.circle(img,(p.pos_x,p.pos_y),10,(0,255,0),-1)
+            elif p.uid == int(uid):
+                img=cv2.circle(img,(p.pos_x,p.pos_y),10,(0,255,255),-1)
+            else:
+                img=cv2.circle(img,(p.pos_x,p.pos_y),10,(0,0,255),-1)
+
+        cv2.imwrite("/home/ahmed/parking2.png",img)
+        with open("/home/ahmed/parking2.png", "rb") as f:
+            return HttpResponse(f.read(), content_type="image/bmp")

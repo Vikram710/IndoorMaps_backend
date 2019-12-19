@@ -1,5 +1,5 @@
 from django.contrib import admin
-from distro.models import Dist
+from distro.models import *
 class RatingAdmin(admin.ModelAdmin):
     readonly_fields = ('date','enters', 'exits')
 
@@ -7,3 +7,4 @@ class RatingAdmin(admin.ModelAdmin):
 
 # Register your models here.
 admin.site.register(Dist, RatingAdmin)
+admin.site.register(ReferencePoint)
