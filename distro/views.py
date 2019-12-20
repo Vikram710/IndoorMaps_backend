@@ -15,6 +15,7 @@ import math
 import matplotlib.pyplot as plt
 import cv2
 import os
+import random
 
 
 dict1={
@@ -143,13 +144,13 @@ def viewv(request):
             total = query.count()
             data['total_visits']=total
             
-            crowd_arr=[]
-            i="1"
+            crowd_arr=""
+            i=1
             for key in dict1:
-                dict2[i]=dict1[key]
-                i=str(int(i)+1)
-             
-            data['crowd_freq']=dict2
+                crowd_arr += str(dict1[key]+random.randint(0,8)) + ","
+                i+=1
+            crowd_arr = crowd_arr[0:len(crowd_arr)-1]
+            data['crowd_freq']=crowd_arr
             # fig = plt.figure(figsize=(3,3))
             # plt.bar(list(dict1.keys()), dict1.values(), color='g')
             # plt.savefig(fig)
@@ -316,8 +317,133 @@ def locate_me(req):
         y1=obj.y
 
         img = cv2.circle(img,(x1,y1),7,(50,255,255),-1)
+        
+        font = cv2.FONT_HERSHEY_SIMPLEX 
+        
+        # org 
+        org = (50, 50) 
+        
+        # fontScale 
+        fontScale = 0.5
+        
+        # Blue color in BGR 
+        color = (255, 0, 0) 
+        
+        # Line thickness of 2 px 
+        thickness = 1
+        
+        # Using cv2.putText() method 
+        img = cv2.putText(img, 'You are here!',(x1+10,y1+2), font,  
+                        fontScale, color, thickness, cv2.LINE_AA) 
         cv2.imwrite("/home/ahmed/layout3.png",img)
 
         with open("/home/ahmed/layout3.png", "rb") as f:
             return HttpResponse(f.read(), content_type="image/bmp")
 
+
+@require_http_methods(['GET'])
+@csrf_exempt
+def get_offers(req):
+    if req.method == 'GET':
+        rp = req.GET.get('rp')
+        obj=ReferencePoint.objects.get(name=rp)
+        x1=obj.x
+        y1=obj.y
+        all_rp = ReferencePoint.objects.all()
+        tmparr = []
+        for rps in all_rp:
+            if rps.reg == True:
+                dis = math.sqrt((rps.x - x1)**2 + (rps.y-y1)**2)
+                tmparr.append((dis,rps.name))
+        
+        tmparr.sort()
+
+        offers_list1 = Offers.objects.filter(rp=tmparr[0][1])
+        offers_list2 = Offers.objects.filter(rp=tmparr[1][1])
+        tmp1 = []
+        tmp=[]
+        for f in offers_list1:
+            tmp.append(f.desc)
+        for f in offers_list2:
+            tmp1.append(f.desc)
+
+        results = {
+                "rpname1" : tmparr[0][1],
+                "offers1" : tmp[0],
+                "rpname2" : tmparr[1][1],
+                "offers2" : tmp1[0]
+            }
+
+
+        return JsonResponse(results)
+
+@require_http_methods(['POST'])
+@csrf_exempt
+def get_wifi(req):
+    if req.method=='POST':
+        st= req.body
+        #print(st)
+        d = json.loads(st)
+        tmp=json.loads(d['body'])
+        a=[]
+        our=['POCO PHONE', 'connect', 'Siemens', 'DIRECT-ZxDESKTOP-ICRIRH3ms2X', 'XL-Healthcare', 'moto']
+        for t in tmp:
+            if t['SSID'] in our:
+                a.append((t['SSID'], t['level']))
+        a= sorted(a, key = lambda x: x[1])
+        print(a[-1])
+        ref1=''
+        if(a[-1][0] == 'POCO PHONE'):
+            ref1='mentor_room'
+        if(a[-1][0] == 'connect'):
+            ref1='hack_room'
+        if(a[-1][0] == 'Siemens'):
+            ref1='stage'
+        if(a[-1][0] == 'DIRECT-ZxDESKTOP-ICRIRH3ms2X'):
+            ref1='game_room'
+        if(a[-1][0] == 'XL-Healthcare'):
+            ref1='regdesk'
+        if(a[-1][0] == 'moto'):
+            ref1='dining'
+        
+        #return JsonResponse(tmp, safe=False)
+        
+        img=cv2.imread("/home/ahmed/layout1.png")
+        obj=ReferencePoint.objects.get(name=ref1)
+        x1=obj.x
+        y1=obj.y
+
+        img = cv2.circle(img,(x1,y1),7,(50,255,255),-1)
+        
+        font = cv2.FONT_HERSHEY_SIMPLEX 
+        
+        # org 
+        org = (50, 50) 
+        
+        # fontScale 
+        fontScale = 0.5
+        
+        # Blue color in BGR 
+        color = (255, 0, 0) 
+        
+        # Line thickness of 2 px 
+        thickness = 1
+        
+        # Using cv2.putText() method 
+        img = cv2.putText(img, 'You are here!',(x1+10,y1+2), font,  
+                        fontScale, color, thickness, cv2.LINE_AA) 
+        cv2.imwrite("/home/ahmed/layout3.png",img)
+
+        result = {
+            'name' : ref1
+        }
+
+        return JsonResponse(result)
+
+@require_http_methods(['GET'])
+@csrf_exempt
+def get_image(req):
+    if req.method=='GET':
+        img=cv2.imread("/home/ahmed/layout3.png")
+        with open("/home/ahmed/layout3.png", "rb") as f:
+            return HttpResponse(f.read(), content_type="image/bmp")

@@ -13,4 +13,12 @@ class ReferencePoint(models.Model):
     x = models.IntegerField(default=0)
     y = models.IntegerField(default=0)
     reg = models.BooleanField(default=False)
+
+    def __str__(self):
+        return  self.name
+
+class Offers(models.Model):
+    rp = models.CharField(max_length=100)
+    desc = models.CharField(max_length=300)
+
     

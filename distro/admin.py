@@ -8,3 +8,4 @@ class RatingAdmin(admin.ModelAdmin):
 # Register your models here.
 admin.site.register(Dist, RatingAdmin)
 admin.site.register(ReferencePoint)
+admin.site.register(Offers)

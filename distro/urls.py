@@ -9,4 +9,7 @@ urlpatterns = [
     path('get_coord',get_coord),
     path('draw_path',draw_path),
     path('locate_me',locate_me),
+    path('get_offers',get_offers),
+    path('get_wifi',get_wifi),
+    path('get_image',get_image),
 ]

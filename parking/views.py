@@ -51,9 +51,7 @@ def leave_view(request):
         data={}
 
         uid=request.GET.get('uid')
-        pname=request.GET.get('pname')
-
-        obj = Park.objects.get(pid=pname)
+        obj = Park.objects.get(uid=uid)
         if obj.status == 'left':
             data['status'] = 'error'
         else :
